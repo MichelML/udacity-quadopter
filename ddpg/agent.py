@@ -78,8 +78,13 @@ class DDPG():
         states = np.vstack([e.state for e in experiences if e is not None])
         actions = np.array([e.action for e in experiences if e is not None]).astype(
             np.float32).reshape(-1, self.action_size)
+
         rewards = np.array([e.reward for e in experiences if e is not None]).astype(
             np.float32).reshape(-1, 1)
+        self.score = np.sum(rewards)
+        if not self.best_score or self.score > self.best_score:
+          self.best_score = self.score
+        
         dones = np.array([e.done for e in experiences if e is not None]).astype(
             np.uint8).reshape(-1, 1)
         next_states = np.vstack(
