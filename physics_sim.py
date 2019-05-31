@@ -13,7 +13,8 @@ def S(x):
 def earth_to_body_frame(ii, jj, kk):
     # C^b_n
     R = [[C(kk) * C(jj), C(kk) * S(jj) * S(ii) - S(kk) * C(ii), C(kk) * S(jj) * C(ii) + S(kk) * S(ii)],
-         [S(kk) * C(jj), S(kk) * S(jj) * S(ii) + C(kk) * C(ii), S(kk) * S(jj) * C(ii) - C(kk) * S(ii)],
+         [S(kk) * C(jj), S(kk) * S(jj) * S(ii) + C(kk) *
+          C(ii), S(kk) * S(jj) * C(ii) - C(kk) * S(ii)],
          [-S(jj), C(jj) * S(ii), C(jj) * C(ii)]]
     return np.array(R)
 
@@ -38,35 +39,45 @@ class PhysicsSim():
         self.l_to_rotor = 0.4
         self.propeller_size = 0.1
         width, length, height = .51, .51, .235
-        self.dims = np.array([width, length, height])  # x, y, z dimensions of quadcopter
-        self.areas = np.array([length * height, width * height, width * length])
+        # x, y, z dimensions of quadcopter
+        self.dims = np.array([width, length, height])
+        self.areas = np.array(
+            [length * height, width * height, width * length])
         I_x = 1 / 12. * self.mass * (height**2 + width**2)
-        I_y = 1 / 12. * self.mass * (height**2 + length**2)  # 0.0112 was a measured value
+        # 0.0112 was a measured value
+        I_y = 1 / 12. * self.mass * (height**2 + length**2)
         I_z = 1 / 12. * self.mass * (width**2 + length**2)
-        self.moments_of_inertia = np.array([I_x, I_y, I_z])  # moments of inertia
+        self.moments_of_inertia = np.array(
+            [I_x, I_y, I_z])  # moments of inertia
 
         env_bounds = 300.0  # 300 m / 300 m / 300 m
         self.lower_bounds = np.array([-env_bounds / 2, -env_bounds / 2, 0])
-        self.upper_bounds = np.array([env_bounds / 2, env_bounds / 2, env_bounds])
+        self.upper_bounds = np.array(
+            [env_bounds / 2, env_bounds / 2, env_bounds])
 
         self.reset()
 
     def reset(self):
         self.time = 0.0
-        self.pose = np.array([0.0, 0.0, 10.0, 0.0, 0.0, 0.0]) if self.init_pose is None else np.copy(self.init_pose)
-        self.v = np.array([0.0, 0.0, 0.0]) if self.init_velocities is None else np.copy(self.init_velocities)
-        self.angular_v = np.array([0.0, 0.0, 0.0]) if self.init_angle_velocities is None else np.copy(self.init_angle_velocities)
+        self.pose = np.array([0.0, 0.0, 10.0, 0.0, 0.0, 0.0]
+                             ) if self.init_pose is None else np.copy(self.init_pose)
+        self.v = np.array([0.0, 0.0, 0.0]) if self.init_velocities is None else np.copy(
+            self.init_velocities)
+        self.angular_v = np.array([0.0, 0.0, 0.0]) if self.init_angle_velocities is None else np.copy(
+            self.init_angle_velocities)
         self.linear_accel = np.array([0.0, 0.0, 0.0])
         self.angular_accels = np.array([0.0, 0.0, 0.0])
         self.prop_wind_speed = np.array([0., 0., 0., 0.])
         self.done = False
 
     def find_body_velocity(self):
-        body_velocity = np.matmul(earth_to_body_frame(*list(self.pose[3:])), self.v)
+        body_velocity = np.matmul(
+            earth_to_body_frame(*list(self.pose[3:])), self.v)
         return body_velocity
 
     def get_linear_drag(self):
-        linear_drag = 0.5 * self.rho * self.find_body_velocity()**2 * self.areas * self.C_d
+        linear_drag = 0.5 * self.rho * self.find_body_velocity()**2 * \
+            self.areas * self.C_d
         return linear_drag
 
     def get_linear_forces(self, thrusts):
@@ -78,17 +89,19 @@ class PhysicsSim():
         drag_body_force = -self.get_linear_drag()
         body_forces = thrust_body_force + drag_body_force
 
-        linear_forces = np.matmul(body_to_earth_frame(*list(self.pose[3:])), body_forces)
+        linear_forces = np.matmul(body_to_earth_frame(
+            *list(self.pose[3:])), body_forces)
         linear_forces += gravity_force
         return linear_forces
 
     def get_moments(self, thrusts):
         thrust_moment = np.array([(thrusts[3] - thrusts[2]) * self.l_to_rotor,
-                            (thrusts[1] - thrusts[0]) * self.l_to_rotor,
-                            0])# (thrusts[2] + thrusts[3] - thrusts[0] - thrusts[1]) * self.T_q])  # Moment from thrust
+                                  (thrusts[1] - thrusts[0]) * self.l_to_rotor,
+                                  0])  # (thrusts[2] + thrusts[3] - thrusts[0] - thrusts[1]) * self.T_q])  # Moment from thrust
 
-        drag_moment =  self.C_d * 0.5 * self.rho * self.angular_v * np.absolute(self.angular_v) * self.areas * self.dims * self.dims
-        moments = thrust_moment - drag_moment # + motor_inertia_moment
+        drag_moment = self.C_d * 0.5 * self.rho * self.angular_v * \
+            np.absolute(self.angular_v) * self.areas * self.dims * self.dims
+        moments = thrust_moment - drag_moment  # + motor_inertia_moment
         return moments
 
     def calc_prop_wind_speed(self):
@@ -122,13 +135,15 @@ class PhysicsSim():
         thrusts = self.get_propeler_thrust(rotor_speeds)
         self.linear_accel = self.get_linear_forces(thrusts) / self.mass
 
-        position = self.pose[:3] + self.v * self.dt + 0.5 * self.linear_accel * self.dt**2
+        position = self.pose[:3] + self.v * self.dt + \
+            0.5 * self.linear_accel * self.dt**2
         self.v += self.linear_accel * self.dt
 
         moments = self.get_moments(thrusts)
 
         self.angular_accels = moments / self.moments_of_inertia
-        angles = self.pose[3:] + self.angular_v * self.dt + 0.5 * self.angular_accels * self.angular_accels * self.dt ** 2
+        angles = self.pose[3:] + self.angular_v * self.dt + 0.5 * \
+            self.angular_accels * self.angular_accels * self.dt ** 2
         angles = (angles + 2 * np.pi) % (2 * np.pi)
         self.angular_v = self.angular_v + self.angular_accels * self.dt
 
