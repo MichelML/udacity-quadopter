@@ -1,6 +1,8 @@
-from actor import Actor
-from critic import Critic
-from replay_buffer import ReplayBuffer
+import numpy as np
+from ddpg.actor import Actor
+from ddpg.critic import Critic
+from ddpg.replay_buffer import ReplayBuffer
+from ddpg.noise import OUNoise
 
 
 class DDPG():
