@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.spatial import distance
 from physics_sim import PhysicsSim
 
 
@@ -24,33 +23,17 @@ class Task():
 
         self.state_size = self.action_repeat * 6
         self.action_low = 0
-        self.action_high = 900
+        self.action_high = 10
         self.action_size = 4
 
         # Goal
         self.target_pos = target_pos if target_pos is not None else np.array([
                                                                              0., 0., 200.])
-        # past distance between position and target
-        self.prev_dist_pos_and_target = distance.cdist([self.sim.pose[:3]], [self.target_pos])[0][0]
-
-    def get_dist_between_3d_points(self, pos, target):
-        return distance.cdist([pos], [target])[0][0]
 
     def get_reward(self):
         """Uses current pose of sim to return reward."""
-        dist_between_pos_and_target = self.get_dist_between_3d_points(self.sim.pose[:3], self.target_pos)
-
-        if dist_between_pos_and_target == 0:
-            self.prev_dist_pos_and_target = dist_between_pos_and_target
-            return 100
-        elif dist_between_pos_and_target < self.prev_dist_pos_and_target:
-            difference = self.prev_dist_pos_and_target - dist_between_pos_and_target
-            self.prev_dist_pos_and_target = dist_between_pos_and_target
-            return difference
-        else:
-            difference = dist_between_pos_and_target - self.prev_dist_pos_and_target
-            self.prev_dist_pos_and_target = dist_between_pos_and_target
-            return -1 if difference ==0 else -difference
+        reward = 1.-.3*(abs(self.sim.pose[:3] - self.target_pos)).sum()
+        return reward
 
     def step(self, rotor_speeds):
         """Uses action to obtain next state, reward, done."""
