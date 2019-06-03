@@ -38,7 +38,7 @@ class Critic:
 
         # Combine state and action pathways
         net = layers.Add()([net_states, net_actions])
-        net = layers.Activation('relu')(net)
+        net = layers.LeakyReLU(alpha=0.3)(net)
 
         # Add more layers to the combined network if needed
 

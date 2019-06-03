@@ -33,8 +33,8 @@ class DDPG():
 
         # Noise process
         self.exploration_mu = 0.
-        self.exploration_theta = 3.
-        self.exploration_sigma = 1.
+        self.exploration_theta = 2.
+        self.exploration_sigma = 6.
         self.noise = OUNoise(self.action_size, self.exploration_mu,
                              self.exploration_theta, self.exploration_sigma)
 
@@ -44,13 +44,8 @@ class DDPG():
         self.memory = ReplayBuffer(self.buffer_size, self.batch_size)
 
         # Algorithm parameters
-        self.gamma = 0.99  # discount factor
+        self.gamma = 0.7  # discount factor
         self.tau = 0.01  # for soft update of target parameters
-        
-        # Initial scores (very poor to start with)
-        self.init_score = -10000.
-        self.score = -10000.
-        self.best_score = -10000.
 
     def reset_episode(self):
         self.noise.reset()
@@ -86,9 +81,6 @@ class DDPG():
 
         rewards = np.array([e.reward for e in experiences if e is not None]).astype(
             np.float32).reshape(-1, 1)
-        self.score = np.sum(rewards)
-        if self.score > self.best_score:
-          self.best_score = self.score
         
         dones = np.array([e.done for e in experiences if e is not None]).astype(
             np.uint8).reshape(-1, 1)

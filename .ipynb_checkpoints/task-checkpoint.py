@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 from scipy.spatial import distance
 from physics_sim import PhysicsSim
 
@@ -26,29 +27,23 @@ class Task():
         self.action_low = 0
         self.action_high = 900
         self.action_size = 4
+        self.action_range = self.action_high - self.action_low
 
         # Goal
-        self.target_pos = target_pos if target_pos is not None else np.array([
-                                                                             0., 0., 200.])
-        # past distance between position and target
-        self.prev_dist_pos_and_target = distance.cdist([self.sim.pose[:3]], [self.target_pos])[0][0]
+        self.target_pos = target_pos if target_pos is not None else np.array([0., 0., 200., 0., 0., 0.])
+        
+        # Score
+        self.score = 0.
+        self.best_score = -10000.
 
     def get_dist_between_3d_points(self, pos, target):
         return distance.cdist([pos], [target])[0][0]
 
-    def get_reward(self):
-        """Uses current pose of sim to return reward."""
-        dist_between_pos_and_target = self.get_dist_between_3d_points(self.sim.pose[:3], self.target_pos)
-
-        if dist_between_pos_and_target < 1:
-            self.prev_dist_pos_and_target = dist_between_pos_and_target
-            return 1000
-        elif dist_between_pos_and_target < self.prev_dist_pos_and_target:
-            self.prev_dist_pos_and_target = dist_between_pos_and_target
-            return 1        
-        else:
-            self.prev_dist_pos_and_target = dist_between_pos_and_target
-            return -1
+    def get_reward(self, rotor_speeds):
+        """Uses current pose of sim to return reward.""" 
+        dist_between_pos_and_target = self.get_dist_between_3d_points(self.sim.pose[:3], self.target_pos[:3])
+        reward = 1. if dist_between_pos_and_target == 0 else 1./float(dist_between_pos_and_target)
+        return reward
 
     def step(self, rotor_speeds):
         """Uses action to obtain next state, reward, done."""
@@ -57,12 +52,16 @@ class Task():
         for _ in range(self.action_repeat):
             # update the sim pose and velocities
             done = self.sim.next_timestep(rotor_speeds)
-            reward += self.get_reward()
+            reward += self.get_reward(rotor_speeds)
+            self.score += reward
             pose_all.append(self.sim.pose)
         next_state = np.concatenate(pose_all)
         return next_state, reward, done
 
     def reset(self):
+        if self.score > self.best_score:
+            self.best_score = copy.copy(self.score)
+        self.score = 0
         """Reset the sim to start a new episode."""
         self.sim.reset()
         state = np.concatenate([self.sim.pose] * self.action_repeat)
