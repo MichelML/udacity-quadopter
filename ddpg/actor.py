@@ -38,7 +38,7 @@ class Actor:
         # Try different layer sizes, activations, add batch normalization, regularizers, etc.
 
         # Add final output layer with sigmoid activation
-        raw_actions = layers.Dense(units=self.action_size, activation='sigmoid',
+        raw_actions = layers.Dense(units=self.action_size, activation='linear',
                                    name='raw_actions')(net)
 
         # Scale [0, 1] output for each action dimension to proper range

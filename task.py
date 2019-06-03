@@ -40,7 +40,7 @@ class Task():
         """Uses current pose of sim to return reward."""
         dist_between_pos_and_target = self.get_dist_between_3d_points(self.sim.pose[:3], self.target_pos)
 
-        if dist_between_pos_and_target < 10:
+        if dist_between_pos_and_target < 1:
             self.prev_dist_pos_and_target = dist_between_pos_and_target
             return 1000
         elif dist_between_pos_and_target < self.prev_dist_pos_and_target:
