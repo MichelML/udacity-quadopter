@@ -1,4 +1,5 @@
 from keras import layers, models, optimizers
+from keras.regularizers import l2
 from keras import backend as K
 
 
@@ -31,11 +32,18 @@ class Actor:
         states = layers.Input(shape=(self.state_size,), name='states')
 
         # Add hidden layers
-        net = layers.Dense(units=32, activation='relu')(states)
-        net = layers.Dense(units=64, activation='relu')(net)
-        net = layers.Dense(units=32, activation='relu')(net)
-
-        # Try different layer sizes, activations, add batch normalization, regularizers, etc.
+        net = layers.Dense(units=72, activation='relu')(states)
+        net = layers.BatchNormalization()(net)
+        net = layers.Dense(units=144, activation='relu')(net)
+        net = layers.Dropout(0.05)(net)
+        net = layers.Dense(units=144, activation='relu')(net)
+        net = layers.Dropout(0.05)(net)
+        net = layers.Dense(units=144, activation='relu')(net)
+        net = layers.Dropout(0.05)(net)
+        net = layers.BatchNormalization()(net)
+        net = layers.Dense(units=36, activation='relu')(net)
+        net = layers.BatchNormalization()(net)
+        net = layers.Dropout(0.05)(net)
 
         # Add final output layer with sigmoid activation
         raw_actions = layers.Dense(units=self.action_size, activation='sigmoid',

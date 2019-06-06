@@ -27,22 +27,30 @@ class Critic:
         actions = layers.Input(shape=(self.action_size,), name='actions')
 
         # Add hidden layer(s) for state pathway
-        net_states = layers.Dense(units=32, activation='relu')(states)
-        net_states = layers.Dense(units=64, activation='relu')(net_states)
+        net_states = layers.Dense(units=128, activation='relu')(states)
+        net_states = layers.Dense(units=256, activation='relu')(net_states)
+        net_states = layers.BatchNormalization()(net_states)
+        net_states = layers.Dropout(0.1)(net_states)
+        net_states = layers.Dense(units=256, activation='relu')(net_states)
+        net_states = layers.BatchNormalization()(net_states)
+        net_states = layers.Dropout(0.1)(net_states)
 
         # Add hidden layer(s) for action pathway
-        net_actions = layers.Dense(units=32, activation='relu')(actions)
-        net_actions = layers.Dense(units=64, activation='relu')(net_actions)
-
-        # Try different layer sizes, activations, add batch normalization, regularizers, etc.
+        net_actions = layers.Dense(units=128, activation='relu')(actions)
+        net_actions = layers.Dense(units=256, activation='relu')(net_actions)
+        net_actions = layers.BatchNormalization()(net_actions)
+        net_actions = layers.Dropout(0.1)(net_actions)
+        net_actions = layers.Dense(units=256, activation='relu')(net_actions)
+        net_actions = layers.BatchNormalization()(net_actions)
+        net_actions = layers.Dropout(0.1)(net_actions)
 
         # Combine state and action pathways
         net = layers.Add()([net_states, net_actions])
-        net = layers.LeakyReLU(alpha=0.3)(net)
+        net = layers.Activation('sigmoid')(net)
 
         # Add more layers to the combined network if needed
 
-        # Add final output layer to prduce action values (Q values)
+        # Add final output layer to produce action values (Q values)
         Q_values = layers.Dense(units=1, name='q_values')(net)
 
         # Create Keras model

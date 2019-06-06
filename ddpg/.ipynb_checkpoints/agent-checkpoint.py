@@ -8,7 +8,22 @@ from ddpg.noise import OUNoise
 class DDPG():
     """Reinforcement Learning agent that learns using DDPG."""
 
-    def __init__(self, task):
+    def __init__(
+        self,
+        task,
+        # noise
+        mu=0.,
+        theta=.15,
+        sigma=3.,
+        # replay buffer
+        buffer_size=1000000,
+        batch_size=4048,
+        # algorithm parameters
+        gamma=0.99,
+        tau=0.1,
+        # learning rate
+        learning_rate=100, # learn each n episodes
+    ):
         self.task = task
         self.state_size = task.state_size
         self.action_size = task.action_size
@@ -32,20 +47,23 @@ class DDPG():
             self.actor_local.model.get_weights())
 
         # Noise process
-        self.exploration_mu = 0.
-        self.exploration_theta = 2.
-        self.exploration_sigma = 6.
+        self.exploration_mu = mu
+        self.exploration_theta = theta
+        self.exploration_sigma = sigma
         self.noise = OUNoise(self.action_size, self.exploration_mu,
                              self.exploration_theta, self.exploration_sigma)
 
         # Replay memory
-        self.buffer_size = 100000
-        self.batch_size = 32
+        self.buffer_size = buffer_size
+        self.batch_size = batch_size
         self.memory = ReplayBuffer(self.buffer_size, self.batch_size)
 
         # Algorithm parameters
-        self.gamma = 0.7  # discount factor
-        self.tau = 0.01  # for soft update of target parameters
+        self.gamma = gamma  # discount factor
+        self.tau = tau  # for soft update of target parameters
+        
+        # Learning rate
+        self.learning_rate = learning_rate
 
     def reset_episode(self):
         self.noise.reset()
@@ -53,12 +71,12 @@ class DDPG():
         self.last_state = state
         return state
 
-    def step(self, action, reward, next_state, done):
+    def step(self, action, reward, next_state, done, i_episode):
          # Save experience / reward
         self.memory.add(self.last_state, action, reward, next_state, done)
 
         # Learn, if enough samples are available in memory
-        if len(self.memory) > self.batch_size:
+        if len(self.memory) > self.batch_size and i_episode % self.learning_rate == 0:
             experiences = self.memory.sample()
             self.learn(experiences)
 
