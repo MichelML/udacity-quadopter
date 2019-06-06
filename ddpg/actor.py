@@ -34,11 +34,11 @@ class Actor:
         # Add hidden layers
         net = layers.Dense(units=72, activation='relu')(states)
         net = layers.BatchNormalization()(net)
-        net = layers.Dense(units=144, activation='relu')(net)
+        net = layers.Dense(units=144, activation='relu', kernel_regularizer=l2(0.001))(net)
         net = layers.Dropout(0.05)(net)
-        net = layers.Dense(units=144, activation='relu')(net)
+        net = layers.Dense(units=144, activation='relu', kernel_regularizer=l2(0.001))(net)
         net = layers.Dropout(0.05)(net)
-        net = layers.Dense(units=144, activation='relu')(net)
+        net = layers.Dense(units=144, activation='relu', kernel_regularizer=l2(0.001))(net)
         net = layers.Dropout(0.05)(net)
         net = layers.BatchNormalization()(net)
         net = layers.Dense(units=36, activation='relu')(net)
@@ -46,7 +46,7 @@ class Actor:
         net = layers.Dropout(0.05)(net)
 
         # Add final output layer with sigmoid activation
-        raw_actions = layers.Dense(units=self.action_size, activation='sigmoid',
+        raw_actions = layers.Dense(units=self.action_size, activation='tanh',
                                    name='raw_actions')(net)
 
         # Scale [0, 1] output for each action dimension to proper range

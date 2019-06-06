@@ -53,15 +53,13 @@ class Task():
         if dist_between_pos_and_target < 1:
             reward_pos = 100
         elif dist_between_pos_and_target < self.prev_pos_diff:
-            reward_pos = 1
+            reward_pos = 3
         else:
-            reward_pos = -1
+            reward_pos = -3
             
         angles_dist_of_target = self.get_dist_between_3d_points(self.sim.pose[3:], self.target_pos[3:])
         reward_angles = 0
         if angles_dist_of_target < 0.03:
-            reward_angles = 100
-        elif angles_dist_of_target < self.prev_pos_diff:
             reward_angles = 1
         else:
             reward_angles = -1

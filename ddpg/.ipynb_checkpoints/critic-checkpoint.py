@@ -1,4 +1,5 @@
 from keras import layers, models, optimizers
+from keras.regularizers import l2
 from keras import backend as K
 
 
@@ -28,25 +29,25 @@ class Critic:
 
         # Add hidden layer(s) for state pathway
         net_states = layers.Dense(units=128, activation='relu')(states)
-        net_states = layers.Dense(units=256, activation='relu')(net_states)
+        net_states = layers.Dense(units=256, activation='relu', kernel_regularizer=l2(0.001))(net_states)
         net_states = layers.BatchNormalization()(net_states)
         net_states = layers.Dropout(0.1)(net_states)
-        net_states = layers.Dense(units=256, activation='relu')(net_states)
+        net_states = layers.Dense(units=256, activation='relu', kernel_regularizer=l2(0.001))(net_states)
         net_states = layers.BatchNormalization()(net_states)
         net_states = layers.Dropout(0.1)(net_states)
 
         # Add hidden layer(s) for action pathway
         net_actions = layers.Dense(units=128, activation='relu')(actions)
-        net_actions = layers.Dense(units=256, activation='relu')(net_actions)
+        net_actions = layers.Dense(units=256, activation='relu', kernel_regularizer=l2(0.001))(net_actions)
         net_actions = layers.BatchNormalization()(net_actions)
         net_actions = layers.Dropout(0.1)(net_actions)
-        net_actions = layers.Dense(units=256, activation='relu')(net_actions)
+        net_actions = layers.Dense(units=256, activation='relu', kernel_regularizer=l2(0.001))(net_actions)
         net_actions = layers.BatchNormalization()(net_actions)
         net_actions = layers.Dropout(0.1)(net_actions)
 
         # Combine state and action pathways
         net = layers.Add()([net_states, net_actions])
-        net = layers.Activation('sigmoid')(net)
+        net = layers.LeakyReLU(alpha=0.3)(net)
 
         # Add more layers to the combined network if needed
 
