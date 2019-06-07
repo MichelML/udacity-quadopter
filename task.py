@@ -42,6 +42,9 @@ class Task():
         # Position
         self.prev_pos_diff = 100000
         self.prev_angle_pos_diff = 100000
+        
+        # Max steps
+        self.max_steps = runtime / (1/50.) # 1/50. is a timestep in the physics simulator
 
     def get_dist_between_3d_points(self, pos, target):
         return distance.cdist([pos], [target])[0][0]
@@ -51,18 +54,18 @@ class Task():
         dist_between_pos_and_target = self.get_dist_between_3d_points(self.sim.pose[:3], self.target_pos[:3])
         reward_pos = 0
         if dist_between_pos_and_target < 1:
-            reward_pos = 100
+            reward_pos = 10
         elif dist_between_pos_and_target < self.prev_pos_diff:
-            reward_pos = 3
+            reward_pos = 0.1
         else:
-            reward_pos = -3
+            reward_pos = -0.1
             
         angles_dist_of_target = self.get_dist_between_3d_points(self.sim.pose[3:], self.target_pos[3:])
         reward_angles = 0
         if angles_dist_of_target < 0.03:
-            reward_angles = 1
+            reward_angles = 0.1
         else:
-            reward_angles = -1
+            reward_angles = -0.1
             
         self.prev_pos_diff = copy.copy(dist_between_pos_and_target)
         self.prev_angle_pos_diff = copy.copy(angles_dist_of_target)
