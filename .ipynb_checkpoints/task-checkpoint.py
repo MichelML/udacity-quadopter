@@ -49,24 +49,8 @@ class Task():
     def get_reward(self, rotor_speeds):
         """Uses current pose of sim to return reward.""" 
         dist_between_pos_and_target = self.get_dist_between_3d_points(self.sim.pose[:3], self.target_pos[:3])
-        reward_pos = 0
-        if dist_between_pos_and_target < 1:
-            reward_pos = 100
-        elif dist_between_pos_and_target < self.prev_pos_diff:
-            reward_pos = 3
-        else:
-            reward_pos = -3
-            
-        angles_dist_of_target = self.get_dist_between_3d_points(self.sim.pose[3:], self.target_pos[3:])
-        reward_angles = 0
-        if angles_dist_of_target < 0.03:
-            reward_angles = 1
-        else:
-            reward_angles = -1
-            
-        self.prev_pos_diff = copy.copy(dist_between_pos_and_target)
-        self.prev_angle_pos_diff = copy.copy(angles_dist_of_target)
-        return reward_pos + reward_angles
+        return 1. if dist_between_pos_and_target < 0.1 else 1./dist_between_pos_and_target
+        
 
     def step(self, rotor_speeds):
         """Uses action to obtain next state, reward, done."""
