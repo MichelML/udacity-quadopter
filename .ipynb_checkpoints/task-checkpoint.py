@@ -19,7 +19,7 @@ class Task():
             target_pos: target/goal (x,y,z) position for the agent
         """
         # Episodes
-        self.num_episodes = 0
+        self.num_episode = 0
 
         # Goal
         self.target_pos = target_pos
@@ -69,7 +69,7 @@ class Task():
         if self.score > self.best_score:
             self.best_score = copy.copy(self.score)
         self.score = 0
-        self.num_episodes += 1
+        self.num_episode += 1
         """Reset the sim to start a new episode."""
         self.sim.reset()
         state = np.concatenate([self.get_sim_state()] * self.action_repeat)
