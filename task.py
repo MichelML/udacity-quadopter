@@ -38,6 +38,7 @@ class Task():
         # Score
         self.score = -10000.
         self.best_score = -10000.
+        self.best_score_episode = 0
         
         # Position
         self.prev_pos_diff = 100000
@@ -49,7 +50,7 @@ class Task():
     def get_reward(self, rotor_speeds):
         """Uses current pose of sim to return reward.""" 
         dist_between_pos_and_target = self.get_dist_between_3d_points(self.sim.pose[:3], self.target_pos[:3])
-        return 1. if dist_between_pos_and_target < 0.1 else 1./dist_between_pos_and_target
+        return 10. if dist_between_pos_and_target < 2 else 1./dist_between_pos_and_target
         
 
     def step(self, rotor_speeds):
@@ -67,6 +68,7 @@ class Task():
 
     def reset(self):
         if self.score > self.best_score:
+            self.best_score_episode = self.num_episode
             self.best_score = copy.copy(self.score)
         self.score = 0
         self.num_episode += 1
