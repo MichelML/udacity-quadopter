@@ -32,18 +32,20 @@ class Actor:
         states = layers.Input(shape=(self.state_size,), name='states')
 
         # Add hidden layers
-        net = layers.Dense(units=72, activation='relu')(states)
+        net = layers.Dense(self.state_size, activation='relu')(states)
         net = layers.BatchNormalization()(net)
-        net = layers.Dense(units=144, activation='relu', kernel_regularizer=l2(0.001))(net)
-        net = layers.Dropout(0.05)(net)
-        net = layers.Dense(units=144, activation='relu', kernel_regularizer=l2(0.001))(net)
-        net = layers.Dropout(0.05)(net)
-        net = layers.Dense(units=144, activation='relu', kernel_regularizer=l2(0.001))(net)
-        net = layers.Dropout(0.05)(net)
+        
+        net = layers.Dense(units=self.state_size * 2, activation='relu', kernel_regularizer=l2(0.001))(net)
         net = layers.BatchNormalization()(net)
-        net = layers.Dense(units=36, activation='relu')(net)
+        net = layers.Dropout(0.1)(net)
+        
+        net = layers.Dense(units=self.state_size * 2, activation='relu', kernel_regularizer=l2(0.001))(net)
         net = layers.BatchNormalization()(net)
-        net = layers.Dropout(0.05)(net)
+        net = layers.Dropout(0.1)(net)
+        
+        net = layers.Dense(units=self.state_size, activation='relu')(net)
+        net = layers.BatchNormalization()(net)
+        net = layers.Dropout(0.1)(net)
 
         # Add final output layer with sigmoid activation
         raw_actions = layers.Dense(units=self.action_size, activation='tanh',
