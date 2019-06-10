@@ -29,7 +29,6 @@ class Critic:
 
         # Add hidden layer(s) for state pathway
         net_states = layers.Dense(units=self.state_size, activation='relu')(states)
-        net_states = layers.Dense(units=self.state_size * self.action_size, activation='relu', kernel_regularizer=l2(0.001))(net_states)
         net_states = layers.BatchNormalization()(net_states)
         net_states = layers.Dropout(0.1)(net_states)
         net_states = layers.Dense(units=self.state_size * self.action_size, activation='relu', kernel_regularizer=l2(0.001))(net_states)
@@ -39,10 +38,11 @@ class Critic:
         net_states = layers.BatchNormalization()(net_states)
         net_states = layers.Dropout(0.1)(net_states)
 
+
         # Add hidden layer(s) for action pathway
         net_actions = layers.Dense(units=self.action_size, activation='relu')(actions)
         net_actions = layers.Dense(units=self.state_size * self.action_size, activation='relu', kernel_regularizer=l2(0.001))(net_actions)
-        net_actions = layers.Dense(units=self.state_size * self.action_size, activation='relu', kernel_regularizer=l2(0.001))(net_actions)
+        net_states = layers.Dropout(0.1)(net_states)
         net_actions = layers.Dense(units=self.state_size * self.action_size, activation='relu', kernel_regularizer=l2(0.001))(net_actions)
 
         # Combine state and action pathways
