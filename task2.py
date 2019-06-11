@@ -7,7 +7,7 @@ from physics_sim import PhysicsSim
 class Task():
     """Task (environment) that defines the goal and provides feedback to the agent."""
 
-    def __init__(self, init_pose=[0.,0., 0., 0., 0., 0.], init_velocities=[0.,0., 0.],
+    def __init__(self, single_state_size, init_pose=[0.,0., 0., 0., 0., 0.], init_velocities=[0.,0., 0.],
                  init_angle_velocities=[0.,0., 0.], runtime=5., target_pos=[0., 0., 200., 0., 0., 0.]):
         """Initialize a Task object.
         Params
@@ -29,7 +29,7 @@ class Task():
                               init_angle_velocities, runtime)
         self.action_repeat = 3
 
-        self.state_size = self.action_repeat * (len(init_pose) + len(init_velocities) + len(init_angle_velocities))
+        self.state_size = self.action_repeat * single_state_size
         self.action_low = 0
         self.action_high = 900
         self.action_size = 4
@@ -54,23 +54,15 @@ class Task():
         reward = 0
         if abs(self.sim.pose[0] - self.target_pos[0]) > 10 or abs(self.sim.pose[1] - self.target_pos[1]) > 10:
             reward = 0
-        elif 95. < current_z < 100.:
+        elif 25. < current_z < 35.:
             reward = 10000
-        elif self.previous_z < 95 and current_z < 95 and self.previous_z < current_z:
+        elif self.previous_z < 25. and current_z < 25. and self.previous_z < current_z:
             reward = 1
-        elif self.previous_z > 100 and current_z > 100 and self.previous_z > current_z:
+        elif self.previous_z > 35. and current_z > 35. and self.previous_z > current_z:
             reward = 1
 
         self.previous_z = self.sim.pose[2]
         return reward * self.z_velocity_discount() * self.x_velocity_discount() * self.y_velocity_discount()
-      
-    def z_velocity_discount(self, c=60.,a=5.,b=1.05,d=-30., h=132.96):
-        # https://www.desmos.com/calculator/o1etf6qg3l
-        expected_vz = c/(1+(a*b**(self.sim.pose[2] - h))) + d
-        diff = abs(expected_vz - self.sim.v[2])
-        discount = 1. - self.normalize(diff, 0, 30)
-        
-        return discount
     
     def x_velocity_discount(self):
         # linear function f(abs(target_x - x)) = expected_x_velocity
@@ -91,7 +83,19 @@ class Task():
         discount = 1. - self.normalize(diff, 0, 30)
         
         return discount
+    
+    def z_velocity_discount(self):
+        # linear function f(abs(target_z - z)) = expected_z_velocity
+        expected_vz = abs(self.target_pos[2] - self.sim.pose[2])
+        expected_vz = expected_vz if self.sim.pose[2] < self.target_pos[2] else -expected_vz
+        vz = self.sim.v[2]
+        diff = abs(expected_vz - vz)
+        discount = 1. - self.normalize(diff, 0, 30)
         
+        return discount
+    
+    def get_all_discounts(self):
+        return [self.z_velocity_discount(), self.x_velocity_discount(), self.y_velocity_discount()]
         
     def normalize(self, x, min_x, max_x):
         normalized_diff = (x-min_x)/(max_x-min_x)
@@ -123,4 +127,4 @@ class Task():
         return state
     
     def get_sim_state(self):
-        return np.concatenate([self.sim.pose, self.sim.v, self.sim.angular_v])
+        return np.concatenate([self.sim.pose, self.sim.v, self.sim.angular_v, self.get_all_discounts()])

@@ -21,8 +21,8 @@ class DDPG():
         # algorithm parameters
         gamma=0.99,
         tau=0.1,
-        # learning rate
-        learning_rate=100, # learn each n episodes
+        # learning each n episodes
+        learning_per_n=100,
     ):
         self.task = task
         self.state_size = task.state_size
@@ -62,8 +62,8 @@ class DDPG():
         self.gamma = gamma  # discount factor
         self.tau = tau  # for soft update of target parameters
         
-        # Learning rate
-        self.learning_rate = learning_rate
+        # Learning per n episodes
+        self.learning_per_n = learning_per_n
 
     def reset_episode(self):
         self.noise.reset()
@@ -76,7 +76,7 @@ class DDPG():
         self.memory.add(self.last_state, action, reward, next_state, done)
 
         # Learn, if enough samples are available in memory
-        if len(self.memory) > self.batch_size and i_episode % self.learning_rate == 0:
+        if len(self.memory) > self.batch_size and i_episode % self.learning_per_n == 0:
             experiences = self.memory.sample()
             self.learn(experiences)
 
