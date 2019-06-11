@@ -52,7 +52,7 @@ class Task():
         current_z = self.sim.pose[2]
         
         reward = 0
-        if dist_from_target_xy > 10:
+        if abs(self.sim.pose[0] - self.target_pos[0]) > 10 or abs(self.sim.pose[1] - self.target_pos[1]) > 10:
             reward = 0
         elif 95. < current_z < 100.:
             reward = 10000
@@ -62,20 +62,39 @@ class Task():
             reward = 1
 
         self.previous_z = self.sim.pose[2]
-        return reward * self.z_velocity_discount(current_z)
+        return reward * self.z_velocity_discount() * self.x_velocity_discount() * self.y_velocity_discount()
       
-    def z_velocity_discount(self, z_position, c=60.,a=5.,b=1.05,d=-30., h=132.96):
+    def z_velocity_discount(self, c=60.,a=5.,b=1.05,d=-30., h=132.96):
         # https://www.desmos.com/calculator/o1etf6qg3l
-        expected_z_velocity = c/(1+(a*b**(z_position - h))) + d
-        diff_from_expected_z_velocity = abs(expected_z_velocity - self.sim.v[2])
-        discount = 1. - self.normalize_z_velocity_diff(diff_from_expected_z_velocity)
+        expected_vz = c/(1+(a*b**(self.sim.pose[2] - h))) + d
+        diff = abs(expected_vz - self.sim.v[2])
+        discount = 1. - self.normalize(diff, 0, 30)
+        
+        return discount
+    
+    def x_velocity_discount(self):
+        # linear function f(abs(target_x - x)) = expected_x_velocity
+        expected_vx = abs(self.target_pos[0] - self.sim.pose[0])
+        expected_vx = expected_vx if self.sim.pose[0] < self.target_pos[0] else -expected_vx
+        vx = self.sim.v[0]
+        diff = abs(expected_vx - vx)
+        discount = 1. - self.normalize(diff, 0, 30)
+        
+        return discount
+    
+    def y_velocity_discount(self):
+        # linear function f(abs(target_y - y)) = expected_y_velocity
+        expected_vy = abs(self.target_pos[1] - self.sim.pose[1])
+        expected_vy = expected_vy if self.sim.pose[1] < self.target_pos[1] else -expected_vy
+        vy = self.sim.v[1]
+        diff = abs(expected_vy - vy)
+        discount = 1. - self.normalize(diff, 0, 30)
         
         return discount
         
-    def normalize_z_velocity_diff(self, diff):
-        min_diff = 0.
-        max_diff = 30.
-        normalized_diff = (diff-min_diff)/(max_diff-min_diff)
+        
+    def normalize(self, x, min_x, max_x):
+        normalized_diff = (x-min_x)/(max_x-min_x)
         
         return normalized_diff if normalized_diff <= 1. else 1.
 
