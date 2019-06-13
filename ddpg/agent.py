@@ -14,15 +14,15 @@ class DDPG():
         # noise
         mu=0.,
         theta=.15,
-        sigma=3.,
+        sigma=2.,
         # replay buffer
         buffer_size=1000000,
-        batch_size=4048,
+        batch_size=64,
         # algorithm parameters
         gamma=0.99,
-        tau=0.1,
+        tau=0.001,
         # learning each n episodes
-        learning_per_n=100,
+        learning_per_n=1,
     ):
         self.task = task
         self.state_size = task.state_size
