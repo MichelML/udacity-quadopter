@@ -28,22 +28,14 @@ class Critic:
         actions = layers.Input(shape=(self.action_size,), name='actions')
 
         # Add hidden layer(s) for state pathway
-        net_states = layers.Dense(units=self.state_size, activation='relu')(states)
-        net_states = layers.BatchNormalization()(net_states)
-        net_states = layers.Dropout(0.1)(net_states)
-        net_states = layers.Dense(units=self.state_size * self.action_size * 2, activation='relu', kernel_regularizer=l2(0.001))(net_states)
-        net_states = layers.BatchNormalization()(net_states)
-        net_states = layers.Dropout(0.1)(net_states)
-        net_states = layers.Dense(units=self.state_size * self.action_size * 2, activation='relu', kernel_regularizer=l2(0.001))(net_states)
-        net_states = layers.BatchNormalization()(net_states)
-        net_states = layers.Dropout(0.1)(net_states)
-
+        net_states = layers.Dense(400, activation='relu', kernel_regularizer=l2(0.001))(states)
+        net_states = layers.Dropout(0.5)(net_states)
+        net_states = layers.Dense(300, activation='relu', kernel_regularizer=l2(0.001))(net_states)
+        net_states = layers.Dropout(0.5)(net_states)
 
         # Add hidden layer(s) for action pathway
-        net_actions = layers.Dense(units=self.action_size, activation='relu')(actions)
-        net_actions = layers.Dense(units=self.state_size * self.action_size * 2, activation='relu', kernel_regularizer=l2(0.001))(net_actions)
-        net_states = layers.Dropout(0.1)(net_states)
-        net_actions = layers.Dense(units=self.state_size * self.action_size * 2, activation='relu', kernel_regularizer=l2(0.001))(net_actions)
+        net_actions = layers.Dense(300, activation='relu', kernel_regularizer=l2(0.001))(actions)
+        net_actions = layers.Dropout(0.5)(net_actions)
 
         # Combine state and action pathways
         net = layers.Add()([net_states, net_actions])
