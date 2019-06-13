@@ -22,7 +22,7 @@ class DDPG():
         gamma=0.99,
         tau=0.001,
         # learning each n episodes
-        learning_per_n=1,
+        learning_per_n=1
     ):
         self.task = task
         self.state_size = task.state_size
