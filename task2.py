@@ -62,58 +62,8 @@ class Task():
             reward = 1
 
         self.previous_z = self.sim.pose[2]
-        return reward * np.prod(self.get_all_discounts())
-    
-    def x_velocity_discount(self):
-        # linear function f(abs(target_x - x)) = expected_x_velocity
-        expected_vx = abs(self.target_pos[0] - self.sim.pose[0])
-        expected_vx = expected_vx if self.sim.pose[0] < self.target_pos[0] else -expected_vx
-        vx = self.sim.v[0]
-        diff = abs(expected_vx - vx)
-        discount = 1. - self.normalize(diff, 0., 30.)
-        
-        return discount
-    
-    def y_velocity_discount(self):
-        # linear function f(abs(target_y - y)) = expected_y_velocity
-        expected_vy = abs(self.target_pos[1] - self.sim.pose[1])
-        expected_vy = expected_vy if self.sim.pose[1] < self.target_pos[1] else -expected_vy
-        vy = self.sim.v[1]
-        diff = abs(expected_vy - vy)
-        discount = 1. - self.normalize(diff, 0., 30.)
-        
-        return discount
-    
-    def z_velocity_discount(self):
-        # linear function f(abs(target_z - z)) = expected_z_velocity
-        expected_vz = abs(self.target_pos[2] - self.sim.pose[2])
-        expected_vz = expected_vz if self.sim.pose[2] < self.target_pos[2] else -expected_vz
-        vz = self.sim.v[2]
-        diff = abs(expected_vz - vz)
-        discount = 1. - self.normalize(diff, 0., 30.)
-        
-        return discount
-    
-    def constant_discount(self, current_val, constant=0., min_val=0., max_val=30.):
-        expected_val = constant
-        diff = abs(expected_val - current_val)
-        discount = 1. - self.normalize(diff, min_val, max_val)
- 
-        return discount
-    
-    def get_all_discounts(self):
-        return [
-            self.z_velocity_discount(),
-            self.x_velocity_discount(),
-            self.y_velocity_discount(),
-            self.constant_discount(self.sim.pose[3], min_val=0., max_val=6.28319),
-            self.constant_discount(self.sim.pose[4], min_val=0., max_val=6.28319),
-            self.constant_discount(self.sim.pose[5], min_val=0., max_val=6.28319),
-            self.constant_discount(self.sim.angular_v[0]),
-            self.constant_discount(self.sim.angular_v[1]),
-            self.constant_discount(self.sim.angular_v[2])
-        ]
-        
+        return reward
+
     def normalize(self, x, min_x, max_x):
         normalized_diff = (x-min_x)/(max_x-min_x)
         
@@ -144,4 +94,4 @@ class Task():
         return state
     
     def get_sim_state(self):
-        return np.concatenate([self.sim.pose, self.sim.v, self.sim.angular_v, self.get_all_discounts()])
+        return np.concatenate([self.sim.pose, self.sim.v, self.sim.angular_v, self.sim.linear_accel, self.sim.angular_accels])
