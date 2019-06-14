@@ -29,13 +29,10 @@ class Critic:
 
         # Add hidden layer(s) for state pathway
         net_states = layers.Dense(400, activation='relu', kernel_regularizer=l2(0.001))(states)
-        net_states = layers.Dropout(0.5)(net_states)
         net_states = layers.Dense(300, activation='relu', kernel_regularizer=l2(0.001))(net_states)
-        net_states = layers.Dropout(0.5)(net_states)
 
         # Add hidden layer(s) for action pathway
         net_actions = layers.Dense(300, activation='relu', kernel_regularizer=l2(0.001))(actions)
-        net_actions = layers.Dropout(0.5)(net_actions)
 
         # Combine state and action pathways
         net = layers.Add()([net_states, net_actions])
