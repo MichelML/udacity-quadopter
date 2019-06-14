@@ -47,32 +47,23 @@ class Task():
         return distance.cdist([pos], [target])[0][0]
 
     def get_reward(self, rotor_speeds):
-        """Uses current pose of sim to return reward.""" 
-        dist_from_target_xy = self.get_dist_between_points(self.sim.pose[:2], self.target_pos[:2])
-        current_z = self.sim.pose[2]
+        reward = min(self.sim.pose[2], self.target_pos[2]) if self.sim.pose[2] <= self.target_pos[2] else 0.
+        time_reward = 0.1
+        velocity_discount = 0.005*(self.sim.v[0]**2 + self.sim.v[1]**2)
+        angular_velocity_discount = 0.5*(self.sim.angular_v[0]**2 + self.sim.angular_v[1]**2)
+        euler_angles_discount = 0.1*self.get_dist_between_points(self.sim.pose[3:], self.target_pos[3:])
         
-        reward = 0
-        if abs(self.sim.pose[0] - self.target_pos[0]) > 10 or abs(self.sim.pose[1] - self.target_pos[1]) > 10:
-            reward = 0
-        elif 28. <= current_z <= 32.:
-            reward = 10000
-        elif self.previous_z < 28. and current_z < 28. and self.previous_z < current_z:
-            reward = 1
-        elif self.previous_z > 32. and current_z > 32. and self.previous_z > current_z:
-            reward = 1
+        return reward - velocity_discount - angular_velocity_discount - euler_angles_discount + time_reward
 
-        self.previous_z = self.sim.pose[2]
-        return reward
     
-    def termination_conditions(self):
-        if self.sim.pose[2] > self.target_pos[2] + 20:
+    def should_terminate(self):
+        if self.sim.pose[2] > self.target_pos[2] + 2.:
             return True
-        elif self.target_pos - 20 < self.sim.pose[0] or self.sim.pose[0] > self.target_pos:
+        elif self.sim.pose[0] < self.target_pos[0] - 20 or self.sim.pose[0] > self.target_pos[0] + 20:
             return True
-        elif self.target_pos - 20 < self.sim.pose[1] or self.sim.pose[1] > self.target_pos:
+        elif self.sim.pose[1] < self.target_pos[1] - 20 or self.sim.pose[1] > self.target_pos[1] + 20:
             return True
-        # 0.174533 rad equal 10 degrees
-        elif self.get_dist_between_points(self.sim.pose[:3], self.target_pos[:3]) > 0.174533:
+        elif self.get_dist_between_points(self.sim.pose[3:], self.target_pos[3:]) > 4.:
             return True
         else:
             return False
@@ -88,7 +79,7 @@ class Task():
         pose_all = []
         for _ in range(self.action_repeat):
             # update the sim pose and velocities
-            done = self.sim.next_timestep(rotor_speeds) or self.termination_conditions()
+            done = self.sim.next_timestep(rotor_speeds)
             reward += self.get_reward(rotor_speeds)
             self.score += reward
             pose_all.append(self.get_sim_state())
