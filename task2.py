@@ -47,31 +47,27 @@ class Task():
         return distance.cdist([pos], [target])[0][0]
 
     def get_reward(self, rotor_speeds):
-        reward = min(self.sim.pose[2], self.target_pos[2]) if self.sim.pose[2] <= self.target_pos[2] else 0.
-        time_reward = 0.1
-        velocity_discount = 0.005*(self.sim.v[0]**2 + self.sim.v[1]**2)
-        angular_velocity_discount = 0.5*(self.sim.angular_v[0]**2 + self.sim.angular_v[1]**2)
-        euler_angles_discount = 0.1*self.get_dist_between_points(self.sim.pose[3:], self.target_pos[3:])
+        reward_z = min(self.sim.pose[2], self.target_pos[2]) if self.sim.pose[2] <= self.target_pos[2] else -1.
+        time_reward = 2.
+        total_reward = sum([reward_z, time_reward])
         
-        return reward - velocity_discount - angular_velocity_discount - euler_angles_discount + time_reward
+        xy_displacement_discount = 0.001*sum(np.square(np.array(self.sim.pose[:2]) - np.array(self.target_pos[:2])))
+        xy_velocity_discount = 0.001*sum(np.square(self.sim.v[:2]))
+        angular_velocity_discount = 0.001*sum(np.square(self.sim.angular_v))
+        euler_angles_discount = 0.01*self.get_dist_between_points(self.sim.pose[3:], self.target_pos[3:])
+        total_discount = sum([xy_displacement_discount, xy_velocity_discount, angular_velocity_discount, euler_angles_discount])
+#         print(f'xy {xy_displacement_discount}')
+#         print(f'xy v {xy_velocity_discount}')
+#         print(f'angular_v {angular_velocity_discount}')
+#         print(f'euler {euler_angles_discount}')
+#         print('----------')
 
+        return total_reward - total_discount
     
     def should_terminate(self):
-        if self.sim.pose[2] > self.target_pos[2] + 2.:
-            return True
-        elif self.sim.pose[0] < self.target_pos[0] - 20 or self.sim.pose[0] > self.target_pos[0] + 20:
-            return True
-        elif self.sim.pose[1] < self.target_pos[1] - 20 or self.sim.pose[1] > self.target_pos[1] + 20:
-            return True
-        elif self.get_dist_between_points(self.sim.pose[3:], self.target_pos[3:]) > 4.:
-            return True
-        else:
-            return False
-
-    def normalize(self, x, min_x, max_x):
-        normalized_diff = (x-min_x)/(max_x-min_x)
-        
-        return normalized_diff if normalized_diff <= 1. else 1.
+#         if self.sim.pose[2] > self.target_pos[2] + 2.:
+#             return True
+        return False
 
     def step(self, rotor_speeds):
         """Uses action to obtain next state, reward, done."""
@@ -79,7 +75,7 @@ class Task():
         pose_all = []
         for _ in range(self.action_repeat):
             # update the sim pose and velocities
-            done = self.sim.next_timestep(rotor_speeds)
+            done = self.sim.next_timestep(rotor_speeds) or self.should_terminate()
             reward += self.get_reward(rotor_speeds)
             self.score += reward
             pose_all.append(self.get_sim_state())
