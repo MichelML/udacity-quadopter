@@ -41,9 +41,6 @@ class Task():
         self.best_score = -10000.
         self.best_score_episode = 0
         
-        # Position
-        self.previous_position = self.init_pose[:3]
-        
     def get_dist_between_points(self, pos, target):
         return distance.cdist([pos], [target])[0][0]
 
@@ -52,14 +49,12 @@ class Task():
         splitted_discounts, total_discount = self.get_discounts()
         net_reward = max(total_reward - total_discount, splitted_rewards[1])
 
-        self.previous_position = self.sim.pose[:3]
         return splitted_rewards, splitted_discounts, total_reward, total_discount, net_reward
 
     def get_rewards(self):
-        dist_from_target = self.get_dist_between_points(self.sim.pose[:3], self.target_pos[:3])
-        previous_dist_from_target = self.get_dist_between_points(self.previous_position, self.target_pos[:3])
-        z_reward = 1. if dist_from_target < 1. or dist_from_target < previous_dist_from_target else 0.
-        time_reward = .02
+        max_points = self.target_pos[2]
+        z_reward = max(max_points - self.get_dist_between_points(self.sim.pose[:3], self.target_pos[:3]), 0.)
+        time_reward = .2
         total_reward = sum([z_reward, time_reward])
         
         return [z_reward, time_reward], total_reward
@@ -95,7 +90,6 @@ class Task():
         self.num_episode += 1
         """Reset the sim to start a new episode."""
         self.sim.reset()
-        self.previous_position = self.init_pose[:3]
         state = np.concatenate([self.get_sim_state(np.zeros(7))] * self.action_repeat)
         return state
     
