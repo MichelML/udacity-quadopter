@@ -32,10 +32,12 @@ class Actor:
         states = layers.Input(shape=(self.state_size,), name='states')
 
         # Add hidden layers
-        net = layers.Dense(100, activation='elu')(states)
+        net = layers.Dense(100)(states)
+        net = layers.Activation('elu')(net)
         for i in range(0,8): 
-            net = layers.Dense(100, activation='elu')(net)
-        for i in range(0,3): 
+            net = layers.Dense(100)(net)
+            net = layers.Activation('elu')(net)
+        for i in range(0,2): 
             net = layers.Dense(100, activation='tanh')(net)
 
         # Add final output layer with sigmoid activation

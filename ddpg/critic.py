@@ -1,6 +1,7 @@
 from keras import layers, models, optimizers
 from keras.regularizers import l2
 from keras import backend as K
+from keras import regularizers
 
 
 class Critic:
@@ -28,13 +29,16 @@ class Critic:
         actions = layers.Input(shape=(self.action_size,), name='actions')
 
         # Add hidden layer(s) for state pathway
-        net_states = layers.Dense(100, activation='elu')(states)
+        net_states = layers.Dense(100)(states)
+        net_states = layers.BatchNormalization()(net_states)
+        net_states = layers.Activation('elu')(net_states)
         for i in range(0,10):
-            net_states = layers.Dense(100, activation='elu')(net_states)
+            net_states = layers.Dense(100)(net_states)
+            net_states = layers.BatchNormalization()(net_states)
+            net_states = layers.Activation('elu')(net_states)
 
         # Add hidden layer(s) for action pathway
         net_actions = layers.Dense(100, activation='tanh')(actions)
-        net_actions = layers.Dense(100, activation='tanh')(net_actions)
         net_actions = layers.Dense(100, activation='tanh')(net_actions)
 
         # Combine state and action pathways

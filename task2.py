@@ -41,7 +41,7 @@ class Task():
         self.best_score = -10000.
         self.best_score_episode = 0
         
-    def get_dist_between_points(self, pos, target):
+    def distance_between_points(self, pos, target):
         return distance.cdist([pos], [target])[0][0]
 
     def get_net_reward(self, rotor_speeds):
@@ -53,23 +53,40 @@ class Task():
 
     def get_rewards(self):
         max_points = self.target_pos[2]
-        z_reward = max(max_points - self.get_dist_between_points(self.sim.pose[:3], self.target_pos[:3]), 0.)
-        time_reward = .2
+        z_reward = max(max_points - self.distance_between_points(self.sim.pose[:3], self.target_pos[:3]), 0.)
+        time_reward = 1.
         total_reward = sum([z_reward, time_reward])
         
         return [z_reward, time_reward], total_reward
 
     def get_discounts(self):
-        xy_displacement_discount = 0.005*self.get_dist_between_points(self.sim.pose[:2], self.target_pos[:2])
-        euler_angles_discount = 0.01*self.get_dist_between_points(self.sim.pose[3:], self.target_pos[3:])
-        total_discount = sum([xy_displacement_discount, euler_angles_discount])
+        target_velocity = [0.,0.,0.]
+        velocity_discount = 0.1*min(self.distance_between_points(self.sim.v, target_velocity), 10.)
         
-        return [xy_displacement_discount, euler_angles_discount], total_discount
+        target_angular_velocity = [0., 0., 0.]
+        angular_velocity_discount = 0.1*min(self.distance_between_points(self.sim.angular_v, target_angular_velocity), 10.)
+        
+        target_euler = [0.,0.,0.]
+        euler_angles_discount = 0.1*min(self.distance_between_points(self.sim.pose[3:], target_euler), 10.)
+        
+        total_discount = sum([velocity_discount, angular_velocity_discount, euler_angles_discount])
+        
+        return [velocity_discount, angular_velocity_discount, euler_angles_discount], total_discount
+    
+    def get_distances_from_final_target(self):
+        v = self.distance_between_points(self.sim.v, [0.]*3)
+        angular_v = self.distance_between_points(self.sim.v, [0.]*3)
+        euler_angles = self.distance_between_points(self.sim.pose[3:], [0.]*3)
+        position = self.distance_between_points(self.sim.pose[:3], self.target_pos[:3])
+        linear_accel = self.distance_between_points(self.sim.linear_accel, [0.]*3)
+        angular_accels = self.distance_between_points(self.sim.angular_accels, [0.]*3)
+        
+        return [v, angular_v, euler_angles, position, linear_accel, angular_accels]
 
     def step(self, rotor_speeds):
         """Uses action to obtain next state, reward, done."""
         reward = 0
-        splitted_r = np.zeros(7)
+        splitted_r = np.zeros(8)
         pose_all = []
         for _ in range(self.action_repeat):
             # update the sim pose and velocities
@@ -94,4 +111,4 @@ class Task():
         return state
     
     def get_sim_state(self, splitted_rewards):
-        return np.concatenate([self.sim.pose, self.sim.v, self.sim.angular_v, self.sim.linear_accel, self.sim.angular_accels, splitted_rewards])
+        return np.concatenate([self.sim.pose, self.sim.v, self.sim.angular_v, self.sim.linear_accel, self.sim.angular_accels, self.get_distances_from_final_target()])
