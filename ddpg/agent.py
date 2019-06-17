@@ -71,24 +71,24 @@ class DDPG():
         self.last_state = state
         return state
 
-    def step(self, action, reward, next_state, done, i_episode):
+    def step(self, action, reward, next_state, done, i_episode, learn=True):
          # Save experience / reward
         self.memory.add(self.last_state, action, reward, next_state, done)
 
         # Learn, if enough samples are available in memory
-        if len(self.memory) > self.batch_size and i_episode % self.learning_per_n == 0:
+        if learn and len(self.memory) > self.batch_size and i_episode % self.learning_per_n == 0:
             experiences = self.memory.sample()
             self.learn(experiences)
 
         # Roll over last state and action
         self.last_state = next_state
 
-    def act(self, state):
+    def act(self, state, noise=True):
         """Returns actions for given state(s) as per current policy."""
         state = np.reshape(state, [-1, self.state_size])
         action = self.actor_local.model.predict(state)[0]
         # add some noise for exploration
-        return list(action + self.noise.sample())
+        return list(action + (self.noise.sample() if noise else 0.))
 
     def learn(self, experiences):
         """Update policy and value parameters using given batch of experience tuples."""
