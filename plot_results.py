@@ -30,13 +30,15 @@ def plot_euler_angular_v(results):
     plt.show()
 
 def plot_reward_over_time(results):
-    plt.title("Net Reward & Deconstructed rewards")
-    plt.plot(results['time'], results['net_reward'], label='Net Reward')
-    plt.plot(results['time'], results['total_reward'], label='Raw Reward')
-    plt.plot(results['time'], results['total_discount'], label='Discount')
-    plt.plot(results['time'], results['velocity_discount'], label='XY displacement')
-    plt.plot(results['time'], results['angular_velocity_discount'], label='XY displacement')
-    plt.plot(results['time'], results['euler_angles_discount'], label='Euler angles')
+    plt.title("Total Reward & Deconstructed Rewards")
+    plt.plot(results['time'], results['total_reward'], label='Total Reward')
+    plt.plot(results['time'], results['position_reward'], label='Position')
+    plt.plot(results['time'], results['euler_reward'], label='Euler')
+    plt.plot(results['time'], results['velocity_reward'], label='Velocity')
+    plt.plot(results['time'], results['angular_velocity_reward'], label='Angular Velocity')
+    plt.plot(results['time'], results['linear_accel_reward'], label='Accel')
+    plt.plot(results['time'], results['angular_accel_reward'], label='Angular Accel')
+    plt.plot(results['time'], results['time_reward'], label='Time')
     plt.legend()
     plt.show()
     

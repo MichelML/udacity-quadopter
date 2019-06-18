@@ -6,7 +6,7 @@ from keras import backend as K
 class Actor:
     """Actor (Policy) Model."""
 
-    def __init__(self, state_size, action_size, action_low, action_high):
+    def __init__(self, state_size, action_size, action_low, action_high, lr=0.0001):
         """Initialize parameters and build model.
 
         Params
@@ -21,9 +21,11 @@ class Actor:
         self.action_low = action_low
         self.action_high = action_high
         self.action_range = self.action_high - self.action_low
+           
+        # learning rate
+        self.lr = lr
 
         # Initialize any other variables here
-
         self.build_model()
 
     def build_model(self):
@@ -32,13 +34,11 @@ class Actor:
         states = layers.Input(shape=(self.state_size,), name='states')
 
         # Add hidden layers
-        net = layers.Dense(100)(states)
-        net = layers.Activation('elu')(net)
-        for i in range(0,8): 
-            net = layers.Dense(100)(net)
-            net = layers.Activation('elu')(net)
-        for i in range(0,2): 
-            net = layers.Dense(100, activation='tanh')(net)
+        net = layers.Dense(600)(states)
+        net = layers.Activation('tanh')(net)
+        for i in range(0,5): 
+            net = layers.Dense(300)(net)
+            net = layers.Activation('tanh')(net)
 
         # Add final output layer with sigmoid activation
         raw_actions = layers.Dense(units=self.action_size, activation='tanh',
@@ -58,7 +58,7 @@ class Actor:
         # Incorporate any additional losses here (e.g. from regularizers)
 
         # Define optimizer and training function
-        optimizer = optimizers.Adam(lr=0.0001)
+        optimizer = optimizers.Adam(lr=self.lr)
         updates_op = optimizer.get_updates(
             params=self.model.trainable_weights, loss=loss)
         self.train_fn = K.function(

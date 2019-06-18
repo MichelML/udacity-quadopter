@@ -40,38 +40,35 @@ class Task():
         self.score = -10000.
         self.best_score = -10000.
         self.best_score_episode = 0
+        self.points_per_component = 10.
         
     def distance_between_points(self, pos, target):
         return distance.cdist([pos], [target])[0][0]
 
-    def get_net_reward(self, rotor_speeds):
-        splitted_rewards, total_reward = self.get_rewards()
-        splitted_discounts, total_discount = self.get_discounts()
-        net_reward = max(total_reward - total_discount, splitted_rewards[1])
-
-        return splitted_rewards, splitted_discounts, total_reward, total_discount, net_reward
-
     def get_rewards(self):
-        max_points = self.target_pos[2]
-        z_reward = max(max_points - self.distance_between_points(self.sim.pose[:3], self.target_pos[:3]), 0.)
-        time_reward = 1.
-        total_reward = sum([z_reward, time_reward])
+        position = max(self.points_per_component - self.distance_between_points(self.sim.pose[:3], self.target_pos[:3]), 0.)
         
-        return [z_reward, time_reward], total_reward
-
-    def get_discounts(self):
         target_velocity = [0.,0.,0.]
-        velocity_discount = 0.1*min(self.distance_between_points(self.sim.v, target_velocity), 10.)
+        velocity = 0.2*max(self.points_per_component - self.distance_between_points(self.sim.v, target_velocity), 0.)
         
         target_angular_velocity = [0., 0., 0.]
-        angular_velocity_discount = 0.1*min(self.distance_between_points(self.sim.angular_v, target_angular_velocity), 10.)
+        angular_velocity = 0.2*max(self.points_per_component - self.distance_between_points(self.sim.angular_v, target_angular_velocity), 0.)
         
         target_euler = [0.,0.,0.]
-        euler_angles_discount = 0.1*min(self.distance_between_points(self.sim.pose[3:], target_euler), 10.)
+        euler_angles = 0.2*max(self.points_per_component - self.distance_between_points(self.sim.pose[3:], target_euler), 0.)
         
-        total_discount = sum([velocity_discount, angular_velocity_discount, euler_angles_discount])
+        target_linear_accel = [0.,0.,0.]
+        linear_accel = 0.2*max(self.points_per_component - self.distance_between_points(self.sim.linear_accel, target_linear_accel), 0.)
         
-        return [velocity_discount, angular_velocity_discount, euler_angles_discount], total_discount
+        target_angular_accel = [0.,0.,0.]
+        angular_accel = 0.2*max(self.points_per_component - self.distance_between_points(self.sim.angular_accels, target_angular_accel), 0.)
+        
+        time = .5
+        
+        individual_rewards = [position, euler_angles, velocity, angular_velocity, linear_accel, angular_accel, time]
+        total_reward = sum(individual_rewards)
+        
+        return individual_rewards, total_reward
     
     def get_distances_from_final_target(self):
         v = self.distance_between_points(self.sim.v, [0.]*3)
@@ -86,18 +83,18 @@ class Task():
     def step(self, rotor_speeds):
         """Uses action to obtain next state, reward, done."""
         reward = 0
-        splitted_r = np.zeros(8)
+        all_rewards = np.zeros(8)
         pose_all = []
         for _ in range(self.action_repeat):
             # update the sim pose and velocities
             done = self.sim.next_timestep(rotor_speeds)
-            splitted_rewards, splitted_discounts, total_reward, total_discount, net_reward = self.get_net_reward(rotor_speeds)
-            splitted_r = splitted_r + np.concatenate([splitted_rewards, splitted_discounts, [total_reward, total_discount, net_reward]])
-            reward += net_reward
+            individual_rewards, total_reward = self.get_rewards()
+            all_rewards = all_rewards + np.concatenate([individual_rewards, [total_reward]])
+            reward += total_reward
             self.score += reward
-            pose_all.append(self.get_sim_state(splitted_r))
+            pose_all.append(self.get_sim_state())
         next_state = np.concatenate(pose_all)
-        return next_state, splitted_r, done
+        return next_state, all_rewards, done
 
     def reset(self):
         if self.score > self.best_score:
@@ -107,8 +104,8 @@ class Task():
         self.num_episode += 1
         """Reset the sim to start a new episode."""
         self.sim.reset()
-        state = np.concatenate([self.get_sim_state(np.zeros(7))] * self.action_repeat)
+        state = np.concatenate([self.get_sim_state()] * self.action_repeat)
         return state
     
-    def get_sim_state(self, splitted_rewards):
-        return np.concatenate([self.sim.pose, self.sim.v, self.sim.angular_v, self.sim.linear_accel, self.sim.angular_accels, self.get_distances_from_final_target()])
+    def get_sim_state(self):
+        return np.concatenate([self.sim.pose, self.sim.v, self.sim.angular_v, self.sim.linear_accel, self.sim.angular_accels, self.get_distances_from_final_target(), [self.sim.time], self.sim.prop_wind_speed])

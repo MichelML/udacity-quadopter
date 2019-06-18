@@ -22,7 +22,8 @@ class DDPG():
         gamma=0.99,
         tau=0.001,
         # learning each n episodes
-        learning_per_n=1
+        learning_per_n=1,
+        lr=[0.001,0.001]
     ):
         self.task = task
         self.state_size = task.state_size
@@ -32,13 +33,13 @@ class DDPG():
 
         # Actor (Policy) Model
         self.actor_local = Actor(
-            self.state_size, self.action_size, self.action_low, self.action_high)
+            self.state_size, self.action_size, self.action_low, self.action_high, lr=lr[0])
         self.actor_target = Actor(
-            self.state_size, self.action_size, self.action_low, self.action_high)
+            self.state_size, self.action_size, self.action_low, self.action_high, lr=lr[0])
 
         # Critic (Value) Model
-        self.critic_local = Critic(self.state_size, self.action_size)
-        self.critic_target = Critic(self.state_size, self.action_size)
+        self.critic_local = Critic(self.state_size, self.action_size, lr=lr[1])
+        self.critic_target = Critic(self.state_size, self.action_size, lr=lr[1])
 
         # Initialize target model parameters with local model parameters
         self.critic_target.model.set_weights(

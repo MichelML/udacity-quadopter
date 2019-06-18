@@ -7,7 +7,7 @@ from keras import regularizers
 class Critic:
     """Critic (Value) Model."""
 
-    def __init__(self, state_size, action_size):
+    def __init__(self, state_size, action_size, lr=0.001):
         """Initialize parameters and build model.
 
         Params
@@ -19,7 +19,7 @@ class Critic:
         self.action_size = action_size
 
         # Initialize any other variables here
-
+        self.lr=lr
         self.build_model()
 
     def build_model(self):
@@ -29,22 +29,24 @@ class Critic:
         actions = layers.Input(shape=(self.action_size,), name='actions')
 
         # Add hidden layer(s) for state pathway
-        net_states = layers.Dense(100)(states)
+        net_states = layers.Dense(600)(states)
         net_states = layers.BatchNormalization()(net_states)
-        net_states = layers.Activation('elu')(net_states)
-        for i in range(0,10):
-            net_states = layers.Dense(100)(net_states)
+        net_states = layers.Activation('tanh')(net_states)
+        net_states = layers.Dropout(0.5)(net_states)
+        for i in range(0,5):
+            net_states = layers.Dense(300)(net_states)
             net_states = layers.BatchNormalization()(net_states)
-            net_states = layers.Activation('elu')(net_states)
+            net_states = layers.Activation('tanh')(net_states)
+            net_states = layers.Dropout(0.5)(net_states)
 
         # Add hidden layer(s) for action pathway
-        net_actions = layers.Dense(100, activation='tanh')(actions)
-        net_actions = layers.Dense(100, activation='tanh')(net_actions)
+        net_actions = layers.Dense(300, activation='tanh')(actions)
+        net_actions = layers.Dense(300, activation='tanh')(net_actions)
 
         # Combine state and action pathways
         net = layers.Add()([net_states, net_actions])
         net = layers.Activation('tanh')(net)
-        net = layers.Dense(100, activation='tanh')(net)
+        net = layers.Dense(300, activation='tanh')(net)
 
         # Add more layers to the combined network if needed
 
@@ -55,7 +57,7 @@ class Critic:
         self.model = models.Model(inputs=[states, actions], outputs=Q_values)
 
         # Define optimizer and compile model for training with built-in loss function
-        optimizer = optimizers.Adam(lr=0.001)
+        optimizer = optimizers.Adam(lr=self.lr)
         self.model.compile(optimizer=optimizer, loss='mse')
 
         # Compute action gradients (derivative of Q values w.r.t. to actions)
