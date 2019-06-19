@@ -42,6 +42,15 @@ def plot_reward_over_time(results):
     plt.legend()
     plt.show()
     
+def plot_reward_over_time3(results):
+    plt.title("Total Reward & Deconstructed Rewards")
+    plt.plot(results['time'], results['total_reward'], label='Total Reward')
+    plt.plot(results['time'], results['position_reward'], label='Position')
+    plt.plot(results['time'], results['euler_reward'], label='Euler')
+    plt.plot(results['time'], results['time_reward'], label='Time')
+    plt.legend()
+    plt.show()
+    
 def plot_reward_over_episodes(results):
     plt.title("Total score per episode")
     plt.plot(results['episode'], results['rewards'])
@@ -50,5 +59,10 @@ def plot_reward_over_episodes(results):
 
 def plot_all(results):
     plot_reward_over_time(results)
+    plot_position_velocity(results)
+    plot_euler_angular_v(results)
+    
+def plot_all3(results):
+    plot_reward_over_time3(results)
     plot_position_velocity(results)
     plot_euler_angular_v(results)

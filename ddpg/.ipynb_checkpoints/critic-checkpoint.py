@@ -29,24 +29,23 @@ class Critic:
         actions = layers.Input(shape=(self.action_size,), name='actions')
 
         # Add hidden layer(s) for state pathway
-        net_states = layers.Dense(600)(states)
+        net_states = layers.Dense(400)(states)
         net_states = layers.BatchNormalization()(net_states)
-        net_states = layers.Activation('tanh')(net_states)
+        net_states = layers.Activation('relu')(net_states)
         net_states = layers.Dropout(0.5)(net_states)
-        for i in range(0,5):
+        for i in range(0, 3):     
             net_states = layers.Dense(300)(net_states)
             net_states = layers.BatchNormalization()(net_states)
-            net_states = layers.Activation('tanh')(net_states)
+            net_states = layers.Activation('relu')(net_states)
             net_states = layers.Dropout(0.5)(net_states)
 
         # Add hidden layer(s) for action pathway
-        net_actions = layers.Dense(300, activation='tanh')(actions)
-        net_actions = layers.Dense(300, activation='tanh')(net_actions)
+        net_actions = layers.Dense(300)(actions)
+        net_actions = layers.Activation('relu')(net_actions)
 
         # Combine state and action pathways
         net = layers.Add()([net_states, net_actions])
-        net = layers.Activation('tanh')(net)
-        net = layers.Dense(300, activation='tanh')(net)
+        net = layers.Activation('relu')(net)
 
         # Add more layers to the combined network if needed
 

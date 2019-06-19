@@ -7,15 +7,8 @@ from physics_sim import PhysicsSim
 class Task():
     """Task (environment) that defines the goal and provides feedback to the agent."""
 
-    def __init__(
-        self,
-        single_state_size=29,
-        target_pos=np.array([10., 10., 10., 0., 0., 0.]),
-        init_pose=[10., 10., 0., 0., 0., 0.],
-        init_velocities=[0.,0.,0.],
-        init_angle_velocities=[0.,0.,0.],
-        runtime=1.8
-    ):
+    def __init__(self, single_state_size=22, init_pose=[10., 10., 0., 0., 0., 0.], init_velocities=[0., 0., 0.],
+                 init_angle_velocities=[0., 0., 0.], runtime=1.8, target_pos=[10., 10., 10., 0., 0., 0.]):
         """Initialize a Task object.
         Params
         ======
@@ -44,8 +37,8 @@ class Task():
         self.action_range = self.action_high - self.action_low
         
         # Score
-        self.score = -10000.
-        self.best_score = -10000.
+        self.score = 0.
+        self.best_score = 0.
         self.best_score_episode = 0
         self.points_per_component = 10.
         
@@ -53,44 +46,21 @@ class Task():
         return distance.cdist([pos], [target])[0][0]
 
     def get_rewards(self):
-        position = (max(self.points_per_component - self.distance_between_points(self.sim.pose[:3], self.target_pos[:3]), 0.)**2)/self.points_per_component
+        position_component = 0.5*(max(self.points_per_component - self.distance_between_points(self.sim.pose[:3], self.target_pos[:3]), 0.)**2)/(self.points_per_component**2)
         
-        target_velocity = [0.,0.,0.]
-        velocity = 0.1*max(self.points_per_component - self.distance_between_points(self.sim.v, target_velocity), 0.)
+        euler_angles_component = 0.5*(max(self.points_per_component - self.distance_between_points(self.sim.pose[3:], self.target_pos[3:]), 0.)**2)/(self.points_per_component**2)
         
-        target_angular_velocity = [0., 0., 0.]
-        angular_velocity = 0.1*max(self.points_per_component - self.distance_between_points(self.sim.angular_v, target_angular_velocity), 0.)
+        time_component = .02
         
-        target_euler = [0.,0.,0.]
-        euler_angles = 0.1*max(self.points_per_component - self.distance_between_points(self.sim.pose[3:], target_euler), 0.)
-        
-        target_linear_accel = [0.,0.,0.]
-        linear_accel = 0.1*max(self.points_per_component - self.distance_between_points(self.sim.linear_accel, target_linear_accel), 0.)
-        
-        target_angular_accel = [0.,0.,0.]
-        angular_accel = 0.1*max(self.points_per_component - self.distance_between_points(self.sim.angular_accels, target_angular_accel), 0.)
-        
-        time = .5
-        
-        individual_rewards = [position, euler_angles, velocity, angular_velocity, linear_accel, angular_accel, time]
+        individual_rewards = [position_component, euler_angles_component, time_component]
         total_reward = sum(individual_rewards)
         
         return individual_rewards, total_reward
-    
-    def get_distances_from_final_target(self):
-        v = self.distance_between_points(self.sim.v, [0.]*3)
-        angular_v = self.distance_between_points(self.sim.v, [0.]*3)
-        euler_angles = self.distance_between_points(self.sim.pose[3:], [0.]*3)
-        position = self.distance_between_points(self.sim.pose[:3], self.target_pos[:3])
-        linear_accel = self.distance_between_points(self.sim.linear_accel, [0.]*3)
-        angular_accels = self.distance_between_points(self.sim.angular_accels, [0.]*3)
-        
-        return [v, angular_v, euler_angles, position, linear_accel, angular_accels]
 
     def step(self, rotor_speeds):
         """Uses action to obtain next state, reward, done."""
         reward = 0
-        all_rewards = np.zeros(8)
+        all_rewards = np.zeros(4)
         pose_all = []
         for _ in range(self.action_repeat):
             # update the sim pose and velocities
@@ -115,4 +85,4 @@ class Task():
         return state
     
     def get_sim_state(self):
-        return np.concatenate([self.sim.pose, self.sim.v, self.sim.angular_v, self.sim.linear_accel, self.sim.angular_accels, self.get_distances_from_final_target(), [self.sim.time], self.sim.prop_wind_speed])
+        return np.concatenate([self.sim.pose, self.sim.v, self.sim.angular_v, self.sim.linear_accel, self.sim.angular_accels, self.sim.prop_wind_speed])
